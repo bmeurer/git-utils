@@ -1,0 +1,65 @@
+#!/bin/sh
+#
+# git-copy: svn copy for Git.
+# 
+# Copyright (C) 2008-2011  Benedikt Meurer <benedikt.meurer@googlemail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+# Parse the command line options
+args=`getopt fh $*`
+if [ $? != 0 ]; then
+	echo "Type 'git-copy -h' for usage." >&2
+	exit 2
+fi
+set -- $args
+copyflags="-n"
+for i; do
+	case "$i"
+	in
+	-f)
+		copyflags="$copyflags -f"
+		shift;;
+	-h)
+		cat >&2 <<EOF
+Usage: git-copy [options] <src> <dst>
+Options:
+  -f    Force copying of a file even if the target exists.
+  -h    Print this message and exit.
+  <src> Path to source file.
+  <dst> Path to target file.
+
+Report bugs to <benedikt.meurer@googlemail.com>
+EOF
+		shift; exit 0;;
+	--)
+		shift; break;;
+	esac
+done
+
+# Determine src and dst
+src="$1"; shift
+dst="$1"; shift
+if [ -z "$src" -o -z "$dst" -o -n "$*" ]; then
+	echo "Not enough arguments provided." >&2
+	echo "Type 'git-copy -h' for usage." >&2
+	exit 2
+fi
+
+# Copy <src> to <dst>
+cp $copyflags -- "$src" "$dst" || exit $?
+
+# Add <dst> to the index
+git add -- "$dst" || exit $?

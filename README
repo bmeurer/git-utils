@@ -1,0 +1,18 @@
+
+                   git-utils - Various git related utilities
+
+Git Utils is a collection of simple utilities that made my Git life easier
+in some way or another. I tried to clean them up as much as necessary prior
+to putting here, so it should be easy to use for others as well.
+
+
+Installation
+
+You don't need anything special, just a working installation of Git and a
+UNIX system (tested with Mac OS X and Linux). To install the git-utils into
+/usr/local run
+
+	$ sudo make install
+
+or just pick the scripts that you need and place them wherever you want.
+

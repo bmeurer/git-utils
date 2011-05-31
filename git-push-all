@@ -1,0 +1,84 @@
+#!/bin/sh
+#
+# git-push-all: Push to all configured remote repositories.
+# 
+# Copyright (C) 2010-2011  Benedikt Meurer <benedikt.meurer@googlemail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+# Parse the command line options
+args=`getopt fhn $*`
+if [ $? != 0 ]; then
+	echo "Type 'git-push-all -h' for usage." >&2
+	exit 2
+fi
+set -- $args
+for i; do
+	case "$i"
+	in
+	-f)
+		pushflags="$pushflags -f"
+		shift;;
+	-h)
+		cat >&2 <<EOF
+Usage: git-push-all [options] [<refspec>...]
+Options:
+  -f           Usually, the git-push command refuses to update a remote ref
+               that is not an ancestor of the local ref used to overwrite it.
+	       This flag disables the check. This can cause the remote
+	       repository to lose commits; use it with care.
+  -h           Print this message and exit.
+  -n           Do everything except actually send the updates.
+  <refspec>... Passed to git-push. If no <refspec> parameter is given, the
+               --all flag is passed to git-push instead.
+
+Report bugs to <benedikt.meurer@googlemail.com>
+EOF
+		shift; exit 0;;
+	-n)
+		pushflags="$pushflags -n"
+		shift;;
+	--)
+		shift; break;;
+	esac
+done
+
+# Treat the remainder as refspec for git-push
+refspec=$*
+
+# But if there is no refspec, then pass --all to git-push
+test -n "$refspec" || pushflags="$pushflags --all"
+
+# Determine the configured remote repositories
+remote=`git remote`
+status=$?
+if [ $status != 0 ]; then
+	exit $status
+elif [ -z "$remote" ]; then
+	echo "fatal: No destination configured to push to." >&2
+	exit 128
+fi
+
+# Invoke git-push for every configured remote repository
+for repository in $remote; do
+	printf "%s..." "$repository" >&2
+	stdout=`git push $pushflags $repository $refspec 2>&1 </dev/null`
+	status=$?
+	if [ $status != 0 ]; then
+		printf "ERROR.\n\n%s\n" "$stdout" >&2
+		exit $status
+	fi
+	printf "OK.\n" >&2
+done
